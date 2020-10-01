@@ -11,6 +11,7 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+.idea/
 downloads/
 eggs/
 .eggs/
@@ -123,3 +124,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# datasets
+/dataset
