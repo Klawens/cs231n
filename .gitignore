@@ -126,4 +126,5 @@ dmypy.json
 .pyre/
 
 # datasets
+Assignment #1/cs231n/datasets
 /dataset

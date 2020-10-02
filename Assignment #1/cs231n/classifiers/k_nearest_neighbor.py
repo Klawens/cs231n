@@ -76,7 +76,7 @@ class KNearestNeighbor(object):
                 #####################################################################
                 # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-                dists[i, j] = np.sqrt(np.sum(np.square(self.Xtr[j] - X[i])))
+                dists[i, j] = np.sqrt(np.sum(np.square(self.X_train[j] - X[i])))
 
                 # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         return dists
@@ -100,7 +100,7 @@ class KNearestNeighbor(object):
             #######################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            dists[i, :] = np.sqrt(np.sum(np.square(self.Xtr - X[i]), axis=1))
+            dists[i, :] = np.sqrt(np.sum(np.square(self.X_train - X[i]), axis=1))
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         return dists
@@ -130,9 +130,9 @@ class KNearestNeighbor(object):
         #########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        M = np.dot(X, self.Xtr.T)
+        M = np.dot(X, self.X_train.T)
         te = np.square(X).sum(axis=1)
-        tr = np.square(self.Xtr).sum(axis=1)
+        tr = np.square(self.X_train).sum(axis=1)
         dists = np.sqrt(-2 * M + tr + np.matrix(te).T)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -167,7 +167,7 @@ class KNearestNeighbor(object):
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
             k_nearest = np.argsort(dists[i, :])
-            closest_y = self.ytr[k_nearest[:k]]
+            closest_y = self.y_train[k_nearest[:k]]
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
             #########################################################################
@@ -179,7 +179,7 @@ class KNearestNeighbor(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            y_pred[i] = np.argmax(np.bincount(closest_y))
+            y_pred[i] = np.argmax(np.bincount(closest_y[0]))
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
