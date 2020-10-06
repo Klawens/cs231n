@@ -122,7 +122,7 @@ class TwoLayerNet(object):
         grads['W2'] = np.dot(hidden_output.T, dscores) + reg * W2
         grads['b2'] = np.sum(dscores, axis=0)
 
-        dhidden_output = dscores.dot(W2.T)
+        dhidden_output = np.dot(dscores, W2.T)
         dRelu = (hidden_output > 0) * dhidden_output
         grads['W1'] = np.dot(X.T, dRelu) + reg * W1
         grads['b1'] = np.sum(dRelu, axis=0)
@@ -189,7 +189,7 @@ class TwoLayerNet(object):
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
             for param_name in self.params:
-                self.params[param_name] += -learning_rate * self.params[param_name]
+                self.params[param_name] += -learning_rate * grads[param_name]
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
