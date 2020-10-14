@@ -128,3 +128,5 @@ dmypy.json
 # datasets
 Assignment #1/cs231n/datasets
 /dataset
+
+test.py
