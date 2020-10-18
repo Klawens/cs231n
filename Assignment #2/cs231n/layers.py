@@ -1,6 +1,4 @@
-from builtins import range
 import numpy as np
-
 
 
 def affine_forward(x, w, b):
@@ -28,13 +26,15 @@ def affine_forward(x, w, b):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x_reshape = np.reshape(x, (x.shape[0], -1))
+    out = np.dot(x_reshape, w) + b
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
     cache = (x, w, b)
+
     return out, cache
 
 
@@ -61,7 +61,11 @@ def affine_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x_reshape = np.reshape(x, (x.shape[0], -1))
+    db = np.sum(dout, axis=0)
+    dx = np.dot(dout, w.T).reshape(x.shape)
+    dw = np.dot(x_reshape.T, dout)
+    # print(dout.shape, dx.shape, dw.shape, db.shape)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -87,7 +91,7 @@ def relu_forward(x):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    out = np.maximum(0*x, x)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -114,7 +118,8 @@ def relu_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # dout(out) has the same size as x
+    dx = dout * (x >= 0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################

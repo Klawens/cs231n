@@ -23,12 +23,12 @@ class TwoLayerNet(object):
     """
 
     def __init__(
-        self,
-        input_dim=3 * 32 * 32,
-        hidden_dim=100,
-        num_classes=10,
-        weight_scale=1e-3,
-        reg=0.0,
+            self,
+            input_dim=3 * 32 * 32,
+            hidden_dim=100,
+            num_classes=10,
+            weight_scale=1e-3,
+            reg=0.0,
     ):
         """
         Initialize a new network.
@@ -55,7 +55,10 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        self.params['b1'] = np.zeros(hidden_dim)
+        self.params['b2'] = np.zeros(num_classes)
+        self.params['W1'] = weight_scale * np.random.randn(input_dim, hidden_dim)
+        self.params['W2'] = weight_scale * np.random.randn(hidden_dim, num_classes)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -88,7 +91,10 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # affine - relu - affine - softmax
+        h1_out, h1_cache = affine_relu_forward(X, self.params['W1'], self.params['b1'])
+        h2_out, h2_cache = affine_forward(h1_out, self.params['W2'], self.params['b2'])
+        scores = h2_out
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -112,7 +118,13 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        W1, W2 = self.params['W1'], self.params['W2']
+        loss, dscores = softmax_loss(scores, y)
+        loss += 0.5 * self.reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
+        dh1_out, grads['W2'], grads['b2'] = affine_backward(dscores, h2_cache)
+        dx, grads['W1'], grads['b1'] = affine_relu_backward(dh1_out, h1_cache)
+        grads['W1'] += self.reg * W1
+        grads['W2'] += self.reg * W2
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -139,16 +151,16 @@ class FullyConnectedNet(object):
     """
 
     def __init__(
-        self,
-        hidden_dims,
-        input_dim=3 * 32 * 32,
-        num_classes=10,
-        dropout=1,
-        normalization=None,
-        reg=0.0,
-        weight_scale=1e-2,
-        dtype=np.float32,
-        seed=None,
+            self,
+            hidden_dims,
+            input_dim=3 * 32 * 32,
+            num_classes=10,
+            dropout=1,
+            normalization=None,
+            reg=0.0,
+            weight_scale=1e-2,
+            dtype=np.float32,
+            seed=None,
     ):
         """
         Initialize a new FullyConnectedNet.
@@ -192,7 +204,16 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        self.params['W1'] = weight_scale * np.random.randn(input_dim, hidden_dims[0])
+        self.params['b1'] = np.zeros(hidden_dims[0])
+        for i in range(self.num_layers - 2):
+            self.params['W%d' % (i + 2)] = weight_scale * np.random.randn(hidden_dims[i], hidden_dims[i + 1])
+            self.params['b%d' % (i + 2)] = np.zeros(hidden_dims[i + 1])
+            if self.normalization:
+                self.params['gamma%d' % (i + 1)] = np.ones(hidden_dims[i + 1])
+                self.params['beta%d' % (i + 1)] = np.zeros(hidden_dims[i + 1])
+        self.params['W%d' % self.num_layers] = weight_scale * np.random.randn(hidden_dims[-1], num_classes)
+        self.params['b%d' % self.num_layers] = np.zeros(num_classes)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -254,7 +275,25 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        layer_input = X
+        affine_relu_cache = {}
+        dropout_cache = {}
+
+        for i in range(self.num_layers - 1):
+            if self.normalization:
+                layer_input, affine_relu_cache[i] = affine_bn_relu_forward(layer_input, self.params['W%d' % (i + 1)],
+                                                                           self.params['b%d' % (i + 1)],
+                                                                           self.params['gamma%d' % (i + 1)],
+                                                                           self.params['beta%d' % (i + 1)],
+                                                                           self.bn_params[i])
+            else:
+                layer_input, affine_relu_cache[i] = affine_relu_forward(layer_input, self.params['W%d' % (i + 1)],
+                                                                        self.params['b%d' % (i + 1)])
+            if self.use_dropout:
+                layer_input, dropout_cache[i] = dropout_forward(layer_input, self.dropout_param)
+
+        scores, affine_relu_cache[self.num_layers] = affine_forward(layer_input, self.params['W%d' % self.num_layers],
+                                                                    self.params['b%d' % self.num_layers])
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -281,7 +320,30 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss, dscores = softmax_loss(scores, y)
+        dhidden_out = dscores
+        loss += 0.5 * self.reg * np.sum(self.params['W%d' % self.num_layers] * self.params['W%d' % self.num_layers])
+        # second last layer dout
+        dx, dw, db = affine_backward(dhidden_out, affine_relu_cache[self.num_layers])
+        grads['W%d' % self.num_layers] = dw + self.reg * self.params['W%d' % self.num_layers]
+        grads['b%d' % self.num_layers] = db
+        # hidden layers backward input data
+        dhidden_out = dx
+        for j in range(self.num_layers - 1):
+            i = self.num_layers - 1 - j - 1;
+            loss += self.reg * 0.5 * np.sum(self.params['W%d' % (i + 1)] * self.params['W%d' % (i + 1)])
+            if self.normalization:
+                dx, dw, db, dgamma, dbeta = affine_bn_relu_backward(dhidden_out, affine_relu_cache[i])
+            else:
+                dx, dw, db = affine_relu_backward(dhidden_out, affine_relu_cache[i])
+            if self.use_dropout:
+                dhidden_out = dropout_backward(dhidden_out, dropout_cache[i])
+            grads['W%d' % (i + 1)] = dw + self.reg * self.params['W%d' % (i + 1)]
+            grads['b%d' % (i + 1)] = db
+            if self.normalization:
+                grads['gamma%d' % (i + 1)] = dgamma
+                grads['beta%d' % (i + 1)] = dbeta
+            dhidden_out = dx
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
