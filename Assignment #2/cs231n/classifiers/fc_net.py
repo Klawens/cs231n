@@ -330,7 +330,7 @@ class FullyConnectedNet(object):
         # hidden layers backward input data
         dhidden_out = dx
         for j in range(self.num_layers - 1):
-            i = self.num_layers - 1 - j - 1;
+            i = self.num_layers - 1 - j - 1
             loss += self.reg * 0.5 * np.sum(self.params['W%d' % (i + 1)] * self.params['W%d' % (i + 1)])
             if self.normalization:
                 dx, dw, db, dgamma, dbeta = affine_bn_relu_backward(dhidden_out, affine_relu_cache[i])
