@@ -204,15 +204,15 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        self.params['W1'] = weight_scale * np.random.randn(input_dim, hidden_dims[0])
-        self.params['b1'] = np.zeros(hidden_dims[0])
-        for i in range(self.num_layers - 2):
-            self.params['W%d' % (i + 2)] = weight_scale * np.random.randn(hidden_dims[i], hidden_dims[i + 1])
-            self.params['b%d' % (i + 2)] = np.zeros(hidden_dims[i + 1])
+        layer_input_dim = input_dim
+        for i, next_i in enumerate(hidden_dims):
+            self.params['W%d' % (i + 1)] = weight_scale * np.random.randn(layer_input_dim, next_i)
+            self.params['b%d' % (i + 1)] = np.zeros(next_i)
             if self.normalization:
-                self.params['gamma%d' % (i + 1)] = np.ones(hidden_dims[i + 1])
-                self.params['beta%d' % (i + 1)] = np.zeros(hidden_dims[i + 1])
-        self.params['W%d' % self.num_layers] = weight_scale * np.random.randn(hidden_dims[-1], num_classes)
+                self.params['gamma%d' % (i + 1)] = np.ones(next_i)
+                self.params['beta%d' % (i + 1)] = np.zeros(next_i)
+            layer_input_dim = next_i
+        self.params['W%d' % self.num_layers] = weight_scale * np.random.randn(layer_input_dim, num_classes)
         self.params['b%d' % self.num_layers] = np.zeros(num_classes)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -275,10 +275,11 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+        # print(self.num_layers)
         layer_input = X
         affine_relu_cache = {}
         dropout_cache = {}
-
+        # loop 5 times
         for i in range(self.num_layers - 1):
             if self.normalization:
                 layer_input, affine_relu_cache[i] = affine_bn_relu_forward(layer_input, self.params['W%d' % (i + 1)],
