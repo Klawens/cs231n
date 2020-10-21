@@ -333,12 +333,12 @@ class FullyConnectedNet(object):
         for j in range(self.num_layers - 1):
             i = self.num_layers - 1 - j - 1
             loss += self.reg * 0.5 * np.sum(self.params['W%d' % (i + 1)] * self.params['W%d' % (i + 1)])
+            if self.use_dropout:
+                dhidden_out = dropout_backward(dhidden_out, dropout_cache[i])
             if self.normalization:
                 dx, dw, db, dgamma, dbeta = affine_bn_relu_backward(dhidden_out, affine_relu_cache[i])
             else:
                 dx, dw, db = affine_relu_backward(dhidden_out, affine_relu_cache[i])
-            if self.use_dropout:
-                dhidden_out = dropout_backward(dhidden_out, dropout_cache[i])
             grads['W%d' % (i + 1)] = dw + self.reg * self.params['W%d' % (i + 1)]
             grads['b%d' % (i + 1)] = db
             if self.normalization:
