@@ -2,7 +2,6 @@ from __future__ import print_function, division
 from builtins import range
 import numpy as np
 
-
 """
 This file defines layer types that are commonly used for recurrent neural
 networks.
@@ -36,7 +35,9 @@ def rnn_step_forward(x, prev_h, Wx, Wh, b):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    h = np.dot(x, Wx) + np.dot(prev_h, Wh) + b
+    next_h = np.tanh(h)
+    cache = (next_h, x, Wx, Wh, prev_h)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -69,7 +70,13 @@ def rnn_step_backward(dnext_h, cache):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    next_h, x, Wx, Wh, prev_h = cache
+    dh = dnext_h * (1 - next_h ** 2)
+    db = np.sum(dh, axis=0)
+    dx = np.dot(dh, Wx.T)
+    dprev_h = np.dot(dh, Wh.T)
+    dWx = np.dot(x.T, dh)
+    dWh = np.dot(prev_h.T, dh)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -104,7 +111,15 @@ def rnn_forward(x, h0, Wx, Wh, b):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    cache = {}
+    N, T, D = x.shape
+    H = h0.shape[1]
+    h = np.zeros(shape=(N, T, H))
+    ht = h0
+    for batch in range(T):
+        ht, cache[batch] = rnn_step_forward(x[:, batch, :], ht, Wx, Wh, b)
+        h[:, batch, :] = ht
+    cache['dims'] = (N, T, D)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -140,7 +155,20 @@ def rnn_backward(dh, cache):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dx = np.zeros(shape=cache['dims'])
+    dWx, dWh, db = 0, 0, 0
+    batch = dh.shape[1] - 1
+    dht = 0
+    while batch >= 0:
+        # step_backward returns dx, dprev_h, dWx, dWh, db
+        dht += dh[:, batch, :]
+        dxt, dht, dWxt, dWht, dbt = rnn_step_backward(dht, cache[batch])
+        dx[:, batch, :] = dxt
+        dWh += dWht
+        dWx += dWxt
+        db += dbt
+        batch -= 1
+    dh0 = dht
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -157,7 +185,7 @@ def word_embedding_forward(x, W):
 
     Inputs:
     - x: Integer array of shape (N, T) giving indices of words. Each element idx
-      of x muxt be in the range 0 <= idx < V.
+      of x must be in the range 0 <= idx < V.
     - W: Weight matrix of shape (V, D) giving word vectors for all words.
 
     Returns a tuple of:
@@ -172,7 +200,8 @@ def word_embedding_forward(x, W):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    out = W[x]
+    cache = (x, W)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -205,7 +234,9 @@ def word_embedding_backward(dout, cache):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, W = cache
+    dW = np.zeros_like(W)
+    np.add.at(dW, x, dout)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
