@@ -5,6 +5,7 @@ import numpy as np
 from .image_utils import SQUEEZENET_MEAN, SQUEEZENET_STD
 from scipy.ndimage.filters import gaussian_filter1d
 
+
 def compute_saliency_maps(X, y, model):
     """
     Compute a class saliency map using the model for images X and labels y.
@@ -34,13 +35,19 @@ def compute_saliency_maps(X, y, model):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    scores = model(X)
+    correct_scores = scores.gather(1, y.view(-1, 1)).squeeze()
+    correct_scores.backward(torch.ones(y.shape[0]))
+    dx = X.grad
+    abs_dx = np.absolute(dx)
+    saliency, max_idx = torch.max(abs_dx, dim=1)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                             END OF YOUR CODE                               #
     ##############################################################################
     return saliency
+
 
 def make_fooling_image(X, target_y, model):
     """
@@ -76,13 +83,26 @@ def make_fooling_image(X, target_y, model):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    num_iter = 100
+    for i in range(num_iter):
+        scores = model(X_fooling)
+        target_score = scores[:, target_y]
+        if torch.argmax(scores) == target_y:
+            print('Need iterations: %i' % i)
+            break
+        target_score.backward()
+        dx = X_fooling.grad
+        with torch.no_grad():
+            X_fooling += learning_rate * dx
+        if i % 10 ==0:
+            print('Iteration: %i' % i)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                             END OF YOUR CODE                               #
     ##############################################################################
     return X_fooling
+
 
 def class_visualization_update_step(img, model, target_y, l2_reg, learning_rate):
     ########################################################################
@@ -94,7 +114,14 @@ def class_visualization_update_step(img, model, target_y, l2_reg, learning_rate)
     ########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    img = img.requires_grad_()
+    scores = model(img)
+    target_scores = scores[:, target_y]
+    loss = target_scores - l2_reg * torch.sum(img * img)
+    loss.backward()
+    dx = img.grad
+    with torch.no_grad():
+        img += learning_rate * dx
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ########################################################################
@@ -112,6 +139,7 @@ def preprocess(img, size=224):
     ])
     return transform(img)
 
+
 def deprocess(img, should_rescale=True):
     transform = T.Compose([
         T.Lambda(lambda x: x[0]),
@@ -122,10 +150,12 @@ def deprocess(img, should_rescale=True):
     ])
     return transform(img)
 
+
 def rescale(x):
     low, high = x.min(), x.max()
     x_rescaled = (x - low) / (high - low)
     return x_rescaled
+
 
 def blur_image(X, sigma=1):
     X_np = X.cpu().clone().numpy()
@@ -133,6 +163,7 @@ def blur_image(X, sigma=1):
     X_np = gaussian_filter1d(X_np, sigma, axis=3)
     X.copy_(torch.Tensor(X_np).type_as(X))
     return X
+
 
 def jitter(X, ox, oy):
     """
